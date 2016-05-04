@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-GODEBUG=cgocheck=0 ./client
+GODEBUG=cgocheck=0 exec ./client "$@"
