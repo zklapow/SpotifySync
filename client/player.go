@@ -156,7 +156,11 @@ func (player *SpotifyPlayer) handleEvents()  {
 	for {
 		select {
 		case <- player.events.AdvanceEvents():
-			player.play(player.queue.Pop())
+			if len(player.queue.elements) > 0 {
+				player.play(player.queue.Pop())
+			} else {
+				logger.Debug("Reached end of queue!")
+			}
 		case track := <- player.events.EnqueueEvents():
 			player.queueOrPlay(track)
 		case linkString := <- player.events.LinkQueueEvents():
