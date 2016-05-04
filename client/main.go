@@ -16,10 +16,13 @@ import (
 )
 
 type Config struct {
-	Coordinator string
-	Username    string
-	Password    string
-	AppKeyPath  string
+	Coordinator  string
+	Username     string
+	Password     string
+	AppKeyPath   string
+	PublishKey   string
+	SubscribeKey string
+	SecretKey    string
 }
 
 var logger = logging.MustGetLogger("spotifysync")
@@ -69,6 +72,9 @@ func main() {
 
 	client := newSpotifyPlayer(&conf)
 	client.Run()
+
+	pnDispatch := newPubNubEventDispatcher(client.events, &conf)
+	pnDispatch.Run()
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, os.Kill)
