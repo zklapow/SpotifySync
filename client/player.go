@@ -73,19 +73,6 @@ func (player *SpotifyPlayer) Run() {
 	}
 	user.Wait()
 
-	list := player.Session.TracksToplist(spotify.ToplistRegionEverywhere)
-	list.Wait()
-
-	track := list.Track(0)
-
-	logger.Infof("Got top list: %v", track)
-	err = player.Session.Player().Load(track)
-	if err != nil {
-		logger.Fatalf("Error loading track: %v", err)
-	}
-
-	player.Session.Player().Play()
-
 	go player.handleEvents()
 	go player.handleSpotifyEvents()
 }

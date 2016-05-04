@@ -10,6 +10,7 @@ const (
 )
 
 type PubNubEventDispatcher struct {
+	conf *Config
 	events *Events
 	pubnub *messaging.Pubnub
 }
@@ -17,13 +18,14 @@ type PubNubEventDispatcher struct {
 func newPubNubEventDispatcher(events *Events, conf *Config) *PubNubEventDispatcher {
 	pubnub := messaging.NewPubnub(conf.PublishKey, conf.SubscribeKey, conf.SecretKey, "", false, "")
 
-	return &PubNubEventDispatcher{events: events, pubnub: pubnub}
+	return &PubNubEventDispatcher{conf: conf, events: events, pubnub: pubnub}
 }
 
 func (dispatch *PubNubEventDispatcher) Run() {
+	logger.Infof("Connecting to channel: %v", dispatch.conf.Channel)
 	cbChan := make(chan []byte)
 	errChan := make(chan []byte)
-	go dispatch.pubnub.Subscribe("test", "", cbChan, false, errChan)
+	go dispatch.pubnub.Subscribe(dispatch.conf.Channel, "", cbChan, false, errChan)
 	go dispatch.handleSubscribeResult(cbChan, errChan)
 }
 

@@ -23,6 +23,7 @@ type Config struct {
 	PublishKey   string
 	SubscribeKey string
 	SecretKey    string
+	Channel      string
 }
 
 var logger = logging.MustGetLogger("spotifysync")
@@ -31,25 +32,31 @@ var format = logging.MustStringFormatter(
 	`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{message}`,
 )
 
-func main() {
-	backend := logging.NewLogBackend(os.Stderr, "", 0)
-	formatter := logging.NewBackendFormatter(backend, format)
-	logging.SetBackend(formatter)
+var configPath string
+var channel string
 
+func init() {
 	usr, err := user.Current()
 	if err != nil {
 		logger.Fatalf("Could not get current user: %v", err)
 	}
 
-	configPath := flag.String("config", path.Join(usr.HomeDir, ".spotifysync.toml"), "the path to the spotify sync config file")
+	flag.StringVar(&configPath, "config", path.Join(usr.HomeDir, ".spotifysync.toml"), "the path to the spotify sync config file")
+	flag.StringVar(&channel, "channel", "", "the channel to connect to")
+}
 
+func main() {
 	flag.Parse()
 
+	backend := logging.NewLogBackend(os.Stderr, "", 0)
+	formatter := logging.NewBackendFormatter(backend, format)
+	logging.SetBackend(formatter)
+
 	var conf Config
-	logger.Debugf("Looking for config file at %v", *configPath)
-	_, err = os.Stat(*configPath)
+	logger.Debugf("Looking for config file at %v", configPath)
+	_, err := os.Stat(configPath)
 	if err == nil {
-		fp, err := os.Open(*configPath)
+		fp, err := os.Open(configPath)
 		if err != nil {
 			logger.Errorf("could not open config file %v", err)
 			os.Exit(-1)
@@ -63,6 +70,11 @@ func main() {
 	} else {
 		logger.Debug("No config file found, using empty config")
 		conf = Config{}
+	}
+
+	logger.Infof("Channel is: %v", channel)
+	if channel != "" {
+		conf.Channel = channel
 	}
 
 	logger.Debug("lib spotify version: %v", spotify.BuildId());
