@@ -12,6 +12,7 @@ import (
 	"github.com/op/go-logging"
 	"os/user"
 	"path"
+	"os/signal"
 )
 
 type Config struct {
@@ -66,11 +67,20 @@ func main() {
 
 	getPassword(&conf)
 
-	client := newClient(&conf)
+	client := newSpotifyPlayer(&conf)
 	client.Run()
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt, os.Kill)
+	for _ = range signals {
+		select {
+		case client.exit <- true:
+		default:
+		}
+	}
 }
 
-func getPassword(conf *Config)  {
+func getPassword(conf *Config) {
 	password, err := keychain.Find("spotifysync", conf.Username)
 	password = strings.TrimSpace(password)
 	if password == "" || err != nil {
