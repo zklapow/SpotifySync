@@ -1,14 +1,14 @@
 package main
 
 import (
-	"os"
-	"os/user"
 	"flag"
-	"path"
-	"io/ioutil"
 	"github.com/BurntSushi/toml"
 	"github.com/op/go-libspotify/spotify"
 	"github.com/op/go-logging"
+	"io/ioutil"
+	"os"
+	"os/user"
+	"path"
 )
 
 type Config struct {
@@ -16,6 +16,10 @@ type Config struct {
 	PublishKey   string
 	SubscribeKey string
 	SecretKey    string
+	AppKeyPath   string
+	Username     string
+	Password     string
+	Channel      string
 }
 
 var logger = logging.MustGetLogger("syncserver")
@@ -58,7 +62,7 @@ func main() {
 		conf = Config{}
 	}
 
-	logger.Debug("lib spotify version: %v", spotify.BuildId());
+	logger.Debugf("lib spotify version: %v", spotify.BuildId())
 	logger.Infof("Starting sync server with config: %v", conf)
 
 	s := newServer(&conf)

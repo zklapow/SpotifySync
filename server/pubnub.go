@@ -1,8 +1,11 @@
 package main
 
-import "github.com/pubnub/go/messaging"
+import (
+	"github.com/pubnub/go/messaging"
+	"github.com/zklapow/SpotifySync/lib"
+)
 
-type PubnubPublisher struct  {
+type PubnubPublisher struct {
 	pubnub *messaging.Pubnub
 }
 
@@ -11,13 +14,14 @@ func newPubnubPublisher(conf *Config) *PubnubPublisher {
 	return &PubnubPublisher{pubnub: pubnub}
 }
 
-func (p *PubnubPublisher) AddTrack(channel, trackUri string) {
+func (p *PubnubPublisher) Play(channel, trackUri string) {
+	logger.Debugf("Publishing %v to channel %v", trackUri, channel)
 	cmd := map[string]string{
-		"cmd": "add",
+		"cmd":   lib.CommandTypePlay,
 		"track": trackUri,
 	}
 
-	p.publish(channel, cmd)
+	go p.publish(channel, cmd)
 }
 
 func (p *PubnubPublisher) Skip(channel string) {
@@ -25,7 +29,7 @@ func (p *PubnubPublisher) Skip(channel string) {
 		"cmd": "skip",
 	}
 
-	p.publish(channel, cmd)
+	go p.publish(channel, cmd)
 }
 
 func (p *PubnubPublisher) publish(channel string, cmd interface{}) {
@@ -33,15 +37,14 @@ func (p *PubnubPublisher) publish(channel string, cmd interface{}) {
 	errChan := make(chan []byte)
 
 	go func() {
-		success := <- cbChan
+		success := <-cbChan
 		logger.Infof("Got success from publish: %v", string(success))
 	}()
 
 	go func() {
-		err := <- errChan
+		err := <-errChan
 		logger.Infof("Got failure from publish: %v", string(err))
 	}()
 
 	p.pubnub.Publish(channel, cmd, cbChan, errChan)
-
 }

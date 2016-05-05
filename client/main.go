@@ -1,18 +1,18 @@
 package main
 
 import (
-	"github.com/op/go-libspotify/spotify"
-	"os"
-	"github.com/lunixbochs/go-keychain"
-	"github.com/BurntSushi/toml"
 	"flag"
-	"io/ioutil"
+	"github.com/BurntSushi/toml"
 	"github.com/bgentry/speakeasy"
-	"strings"
+	"github.com/lunixbochs/go-keychain"
+	"github.com/op/go-libspotify/spotify"
 	"github.com/op/go-logging"
+	"io/ioutil"
+	"os"
+	"os/signal"
 	"os/user"
 	"path"
-	"os/signal"
+	"strings"
 )
 
 type Config struct {
@@ -77,7 +77,7 @@ func main() {
 		conf.Channel = channel
 	}
 
-	logger.Debug("lib spotify version: %v", spotify.BuildId());
+	logger.Debug("lib spotify version: %v", spotify.BuildId())
 	logger.Infof("Starting sync client with config: %v", conf)
 
 	getPassword(&conf)

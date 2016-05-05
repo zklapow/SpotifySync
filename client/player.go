@@ -1,22 +1,20 @@
 package main
 
 import (
-	"github.com/op/go-libspotify/spotify"
-	"path"
-	"os"
-	"io/ioutil"
-	"time"
 	"github.com/gordonklaus/portaudio"
+	"github.com/op/go-libspotify/spotify"
+	"io/ioutil"
+	"os"
+	"path"
+	"time"
 )
 
 type SpotifyPlayer struct {
 	Conf      *Config
 	Session   *spotify.Session
 	portaudio *portAudio
-	exit 	  chan bool
+	exit      chan bool
 	events    *Events
-	queue 	  *PlayQueue
-	current    *spotify.Track
 }
 
 func newSpotifyPlayer(conf *Config) *SpotifyPlayer {
@@ -29,11 +27,11 @@ func newSpotifyPlayer(conf *Config) *SpotifyPlayer {
 	pa := newPortAudio()
 
 	session, err := spotify.NewSession(&spotify.Config{
-		ApplicationKey: appKey,
-		ApplicationName: prog,
-		CacheLocation: "/tmp",
+		ApplicationKey:   appKey,
+		ApplicationName:  prog,
+		CacheLocation:    "/tmp",
 		SettingsLocation: "/tmp",
-		AudioConsumer: pa,
+		AudioConsumer:    pa,
 	})
 
 	if err != nil {
@@ -54,12 +52,11 @@ func newSpotifyPlayer(conf *Config) *SpotifyPlayer {
 	<-loginChan
 
 	return &SpotifyPlayer{
-		Conf: conf,
-		Session: session,
+		Conf:      conf,
+		Session:   session,
 		portaudio: pa,
-		exit: make(chan bool),
-		events: newEvents(),
-		queue: newPlayQueue(),
+		exit:      make(chan bool),
+		events:    newEvents(),
 	}
 }
 
@@ -78,19 +75,15 @@ func (player *SpotifyPlayer) Run() {
 }
 
 func (player *SpotifyPlayer) play(track *spotify.Track) error {
-	player.Session.Player().Pause()
 	track.Wait()
 
-	player.current = track
+	player.Session.Player().Pause()
+	player.Session.Player().Unload()
 
-	player.Session.Player().Load(player.current)
+	player.Session.Player().Load(track)
 	player.Session.Player().Play()
 
 	return nil
-}
-
-func (player *SpotifyPlayer) prefetch(track *spotify.Track) {
-	player.Session.Player().Prefetch(track)
 }
 
 func (player *SpotifyPlayer) Close() {
@@ -122,7 +115,7 @@ func (player *SpotifyPlayer) handleSpotifyEvents() {
 		case <-session.ConnectionStateUpdates():
 			logger.Debugf("connstate: %v", session.ConnectionState())
 		case <-session.EndOfTrackUpdates():
-			player.events.TriggerAdvance()
+			logger.Debugf("reached end of current track")
 		case <-player.exit:
 			logger.Debug("exiting")
 			if exitAttempts >= 3 {
@@ -142,13 +135,7 @@ func (player *SpotifyPlayer) handleSpotifyEvents() {
 func (player *SpotifyPlayer) handleEvents() {
 	for {
 		select {
-		case <-player.events.SkipEvents():
-			player.advance()
-		case <-player.events.AdvanceEvents():
-			player.advance()
-		case track := <-player.events.EnqueueEvents():
-			player.queueOrPlay(track)
-		case linkString := <-player.events.LinkQueueEvents():
+		case linkString := <-player.events.PlayEvents():
 			link, err := player.Session.ParseLink(linkString)
 			if err != nil {
 				logger.Errorf("Failed to parse link %v: %v", linkString, err)
@@ -163,27 +150,13 @@ func (player *SpotifyPlayer) handleEvents() {
 				continue
 			}
 
-			player.prefetch(track)
+			player.play(track)
 		}
 	}
 }
 
-func (player *SpotifyPlayer) advance() {
-	if len(player.queue.elements) > 0 {
-		player.play(player.queue.Pop())
-	} else {
-		logger.Debug("Reached end of queue!")
-	}
-}
-
-func (player *SpotifyPlayer) queueOrPlay(track *spotify.Track) {
-	if player.current == nil {
-		player.play(track)
-	} else {
-		if err := player.Session.Player().Prefetch(track); err != nil {
-			logger.Debugf("Failed to prefetch track %v", err)
-		}
-
-		player.queue.Append(track)
+func (player *SpotifyPlayer) prefetch(track *spotify.Track) {
+	if err := player.Session.Player().Prefetch(track); err != nil {
+		logger.Debugf("Failed to prefetch track %v", err)
 	}
 }

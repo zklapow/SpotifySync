@@ -1,19 +1,13 @@
 package main
 
 import (
-	"github.com/pubnub/go/messaging"
 	"encoding/json"
-)
-
-const (
-	CommandTypeAdd = "add"
-	CommandTypeFetch = "fetch"
-	CommandTypeSkip = "skip"
-	CommandTypePlay = "play"
+	"github.com/pubnub/go/messaging"
+	"github.com/zklapow/SpotifySync/lib"
 )
 
 type PubNubEventDispatcher struct {
-	conf *Config
+	conf   *Config
 	events *Events
 	pubnub *messaging.Pubnub
 }
@@ -54,6 +48,27 @@ func (dispatch *PubNubEventDispatcher) handleSubscribeResult(successChannel, err
 	}
 }
 
+func (dispatch *PubNubEventDispatcher) handlePublishResult(successChannel, errorChannel chan []byte) {
+	for {
+		select {
+		case success, ok := <-successChannel:
+			if !ok {
+				break
+			}
+			if string(success) != "[]" {
+				logger.Debugf("Successfully published to pubnub channel: %v", string(success))
+			}
+		case failure, ok := <-errorChannel:
+			if !ok {
+				break
+			}
+			if string(failure) != "[]" {
+				logger.Errorf("Failed to publish to pubnub channel: %v", string(failure))
+			}
+		}
+	}
+}
+
 func (dispatch *PubNubEventDispatcher) handleCommand(command map[string]interface{}) {
 	cmdType, ok := command["cmd"]
 	if !ok {
@@ -62,7 +77,7 @@ func (dispatch *PubNubEventDispatcher) handleCommand(command map[string]interfac
 	}
 
 	switch cmdType {
-	case CommandTypeAdd:
+	case lib.CommandTypePlay:
 		track, ok := command["track"]
 		if !ok {
 			logger.Errorf("Expected field 'track' was not present in add command!")
@@ -70,9 +85,7 @@ func (dispatch *PubNubEventDispatcher) handleCommand(command map[string]interfac
 		}
 		logger.Debugf("Enqueuing link %v", track)
 
-		dispatch.events.EnqueueLink(track.(string))
-	case CommandTypeSkip:
-		dispatch.events.Skip()
+		dispatch.events.Play(track.(string))
 	}
 }
 
@@ -98,4 +111,3 @@ func decodeCommandArray(in interface{}) map[string]interface{} {
 
 	return nil
 }
-

@@ -70,3 +70,4 @@ _testmain.go
 *.test
 *.prof
 
+release/

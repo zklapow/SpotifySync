@@ -19,11 +19,11 @@ func newPortAudio() *portAudio {
 }
 
 func (pa *portAudio) player() {
-	out := make([]int16, 2048 * 2)
+	out := make([]int16, 2048*2)
 
 	stream, err := portaudio.OpenDefaultStream(
 		0,
-		2, // audio.format.Channels,
+		2,     // audio.format.Channels,
 		44100, // float64(audio.format.SampleRate),
 		len(out),
 		&out,
@@ -42,7 +42,7 @@ func (pa *portAudio) player() {
 
 		select {
 		case audio := <-pa.buffer:
-			if len(audio.frames) != 2048 * 2 * 2 {
+			if len(audio.frames) != 2048*2*2 {
 				// panic("unexpected")
 				// don't know if it's a panic or track just ended
 				break
@@ -50,7 +50,7 @@ func (pa *portAudio) player() {
 
 			j := 0
 			for i := 0; i < len(audio.frames); i += 2 {
-				out[j] = int16(audio.frames[i]) | int16(audio.frames[i + 1]) << 8
+				out[j] = int16(audio.frames[i]) | int16(audio.frames[i+1])<<8
 				j++
 			}
 
