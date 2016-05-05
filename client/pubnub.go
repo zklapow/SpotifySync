@@ -7,6 +7,9 @@ import (
 
 const (
 	CommandTypeAdd = "add"
+	CommandTypeFetch = "fetch"
+	CommandTypeSkip = "skip"
+	CommandTypePlay = "play"
 )
 
 type PubNubEventDispatcher struct {
@@ -68,6 +71,8 @@ func (dispatch *PubNubEventDispatcher) handleCommand(command map[string]interfac
 		logger.Debugf("Enqueuing link %v", track)
 
 		dispatch.events.EnqueueLink(track.(string))
+	case CommandTypeSkip:
+		dispatch.events.Skip()
 	}
 }
 

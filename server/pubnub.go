@@ -12,7 +12,23 @@ func newPubnubPublisher(conf *Config) *PubnubPublisher {
 }
 
 func (p *PubnubPublisher) AddTrack(channel, trackUri string) {
-	logger.Debugf("Publishing to channel %v: %v", channel, trackUri)
+	cmd := map[string]string{
+		"cmd": "add",
+		"track": trackUri,
+	}
+
+	p.publish(channel, cmd)
+}
+
+func (p *PubnubPublisher) Skip(channel string) {
+	cmd := map[string]string{
+		"cmd": "skip",
+	}
+
+	p.publish(channel, cmd)
+}
+
+func (p *PubnubPublisher) publish(channel string, cmd interface{}) {
 	cbChan := make(chan []byte)
 	errChan := make(chan []byte)
 
@@ -26,10 +42,6 @@ func (p *PubnubPublisher) AddTrack(channel, trackUri string) {
 		logger.Infof("Got failure from publish: %v", string(err))
 	}()
 
-	cmd := map[string]string{
-		"cmd": "add",
-		"track": trackUri,
-	}
-
 	p.pubnub.Publish(channel, cmd, cbChan, errChan)
+
 }

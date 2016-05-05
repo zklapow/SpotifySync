@@ -139,18 +139,16 @@ func (player *SpotifyPlayer) handleSpotifyEvents() {
 	os.Exit(32)
 }
 
-func (player *SpotifyPlayer) handleEvents()  {
+func (player *SpotifyPlayer) handleEvents() {
 	for {
 		select {
-		case <- player.events.AdvanceEvents():
-			if len(player.queue.elements) > 0 {
-				player.play(player.queue.Pop())
-			} else {
-				logger.Debug("Reached end of queue!")
-			}
-		case track := <- player.events.EnqueueEvents():
+		case <-player.events.SkipEvents():
+			player.advance()
+		case <-player.events.AdvanceEvents():
+			player.advance()
+		case track := <-player.events.EnqueueEvents():
 			player.queueOrPlay(track)
-		case linkString := <- player.events.LinkQueueEvents():
+		case linkString := <-player.events.LinkQueueEvents():
 			link, err := player.Session.ParseLink(linkString)
 			if err != nil {
 				logger.Errorf("Failed to parse link %v: %v", linkString, err)
@@ -165,8 +163,16 @@ func (player *SpotifyPlayer) handleEvents()  {
 				continue
 			}
 
-			player.queueOrPlay(track)
+			player.prefetch(track)
 		}
+	}
+}
+
+func (player *SpotifyPlayer) advance() {
+	if len(player.queue.elements) > 0 {
+		player.play(player.queue.Pop())
+	} else {
+		logger.Debug("Reached end of queue!")
 	}
 }
 

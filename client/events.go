@@ -6,6 +6,7 @@ type Events struct {
 	queue     chan *spotify.Track
 	linkqueue chan string
 	advance   chan bool
+	skip      chan bool
 }
 
 func newEvents() *Events {
@@ -13,6 +14,7 @@ func newEvents() *Events {
 		queue: make(chan *spotify.Track),
 		linkqueue: make(chan string),
 		advance: make(chan bool),
+		skip: make(chan bool),
 	}
 }
 
@@ -38,4 +40,12 @@ func (events *Events) EnqueueLink(track string) {
 
 func (events *Events) LinkQueueEvents() chan string {
 	return events.linkqueue
+}
+
+func (events *Events) Skip() {
+	events.skip <- true
+}
+
+func (events *Events) SkipEvents() chan bool {
+	return events.skip
 }

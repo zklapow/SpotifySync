@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/nlopes/slack"
 	"regexp"
+	"strings"
 )
 
 var REGEX *regexp.Regexp
@@ -48,15 +49,17 @@ func (server *Server) Run() {
 			case *slack.MessageEvent:
 				logger.Debugf("Message: %v\n", ev)
 
+				channel, err := api.GetChannelInfo(ev.Channel)
+				if err != nil {
+					logger.Errorf("Failed to get channel info: %v", err)
+					continue
+				}
+
 				match := REGEX.FindString(ev.Text)
 				if match != "" {
-					channel, err := api.GetChannelInfo(ev.Channel)
-					if err != nil {
-						logger.Errorf("Failed to get channel info: %v", err)
-						continue
-					}
-
 					server.publisher.AddTrack(channel.Name, match)
+				} else if strings.ToLower(ev.Text) == "skip" {
+					server.publisher.Skip(channel.Name)
 				}
 
 			case *slack.PresenceChangeEvent:
