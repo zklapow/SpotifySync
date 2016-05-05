@@ -125,6 +125,8 @@ func (server *Server) handleStateTimeout(state PlayState) {
 	<-state.End()
 	logger.Debugf("Reached end of track %v", state.TrackLink)
 	server.state = nil
+
+	server.playNext()
 }
 
 func (server *Server) playNext() {
