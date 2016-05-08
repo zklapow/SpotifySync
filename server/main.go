@@ -9,6 +9,10 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"time"
+	"math"
+	"github.com/zklapow/SpotifySync/lib"
+	"github.com/pubnub/go/messaging"
 )
 
 type Config struct {
@@ -65,6 +69,15 @@ func main() {
 	logger.Debugf("lib spotify version: %v", spotify.BuildId())
 	logger.Infof("Starting sync server with config: %v", conf)
 
-	s := newServer(&conf)
+	pubnub := messaging.NewPubnub(conf.PublishKey, conf.SubscribeKey, conf.SecretKey, "", false, "")
+
+	timeSyncer := lib.StartTimeSync(pubnub)
+	timeSyncer.AwaitSynced()
+
+	now := time.Now()
+	clientTime := timeSyncer.SyncedTime()
+	logger.Infof("Time sync started (%v, %v, %v)", now, clientTime, math.Abs(float64(now.Unix()) - float64(clientTime.Unix())))
+
+	s := newServer(&conf, newPubnubPublisher(&conf, pubnub), timeSyncer)
 	s.Run()
 }

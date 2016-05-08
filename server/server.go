@@ -21,19 +21,21 @@ func init() {
 }
 
 type Server struct {
-	conf      *Config
-	publisher *PubnubPublisher
-	queue     *lib.PlayQueue
-	session   *spotify.Session
-	state     *PlayState
+	conf       *Config
+	publisher  *PubnubPublisher
+	queue      *lib.PlayQueue
+	session    *spotify.Session
+	state      *PlayState
+	timeSyncer *lib.TimeSyncer
 }
 
-func newServer(conf *Config) *Server {
+func newServer(conf *Config, publisher *PubnubPublisher, timeSyncer *lib.TimeSyncer) *Server {
 	return &Server{
 		conf:      conf,
-		publisher: newPubnubPublisher(conf),
+		publisher: publisher,
 		queue:     lib.NewPlayQueue(),
 		session:   createSpotifySession(conf),
+		timeSyncer: timeSyncer,
 	}
 }
 

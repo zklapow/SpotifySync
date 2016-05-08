@@ -9,8 +9,7 @@ type PubnubPublisher struct {
 	pubnub *messaging.Pubnub
 }
 
-func newPubnubPublisher(conf *Config) *PubnubPublisher {
-	pubnub := messaging.NewPubnub(conf.PublishKey, conf.SubscribeKey, conf.SecretKey, "", false, "")
+func newPubnubPublisher(conf *Config, pubnub *messaging.Pubnub) *PubnubPublisher {
 	return &PubnubPublisher{pubnub: pubnub}
 }
 
