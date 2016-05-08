@@ -4,18 +4,23 @@ import (
 	"encoding/json"
 	"github.com/pubnub/go/messaging"
 	"github.com/zklapow/SpotifySync/lib"
+	"time"
 )
 
 type PubNubEventDispatcher struct {
-	conf   *Config
-	events *Events
-	pubnub *messaging.Pubnub
+	conf       *Config
+	events     *Events
+	pubnub     *messaging.Pubnub
+	timeSyncer *lib.TimeSyncer
 }
 
-func newPubNubEventDispatcher(events *Events, conf *Config) *PubNubEventDispatcher {
-	pubnub := messaging.NewPubnub(conf.PublishKey, conf.SubscribeKey, conf.SecretKey, "", false, "")
-
-	return &PubNubEventDispatcher{conf: conf, events: events, pubnub: pubnub}
+func newPubNubEventDispatcher(events *Events, pubnub *messaging.Pubnub, conf *Config) *PubNubEventDispatcher {
+	return &PubNubEventDispatcher{
+		conf: conf,
+		events: events,
+		pubnub: pubnub,
+		timeSyncer: lib.StartTimeSync(pubnub),
+	}
 }
 
 func (dispatch *PubNubEventDispatcher) Run() {
@@ -85,7 +90,20 @@ func (dispatch *PubNubEventDispatcher) handleCommand(command map[string]interfac
 		}
 		logger.Debugf("Enqueuing link %v", track)
 
-		dispatch.events.Play(track.(string))
+		execAt, ok := command["execAt"]
+		if !ok {
+			dispatch.events.Play(track.(string))
+			return
+		} else {
+			execAtTime := time.Unix(0, int64(execAt.(float64)))
+			timeUntilExec := execAtTime.Sub(dispatch.timeSyncer.SyncedTime())
+
+			logger.Debugf("Waiting %v to play new track", timeUntilExec)
+			time.AfterFunc(timeUntilExec, func() {
+				dispatch.events.Play(track.(string))
+			})
+		}
+
 	}
 }
 
