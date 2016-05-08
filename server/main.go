@@ -16,14 +16,15 @@ import (
 )
 
 type Config struct {
-	SlackToken   string
-	PublishKey   string
-	SubscribeKey string
-	SecretKey    string
-	AppKeyPath   string
-	Username     string
-	Password     string
-	Channel      string
+	SlackToken     string
+	PublishKey     string
+	SubscribeKey   string
+	SecretKey      string
+	AppKeyPath     string
+	Username       string
+	Password       string
+	Channel        string
+	LatencyDelayMs int64
 }
 
 var logger = logging.MustGetLogger("syncserver")

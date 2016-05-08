@@ -3,21 +3,26 @@ package main
 import (
 	"github.com/pubnub/go/messaging"
 	"github.com/zklapow/SpotifySync/lib"
+	"time"
 )
 
 type PubnubPublisher struct {
+	conf *Config
 	pubnub *messaging.Pubnub
+	timeSyncer *lib.TimeSyncer
 }
 
 func newPubnubPublisher(conf *Config, pubnub *messaging.Pubnub) *PubnubPublisher {
-	return &PubnubPublisher{pubnub: pubnub}
+	return &PubnubPublisher{conf: conf, pubnub: pubnub, timeSyncer: lib.StartTimeSync(pubnub)}
 }
 
 func (p *PubnubPublisher) Play(channel, trackUri string) {
 	logger.Debugf("Publishing %v to channel %v", trackUri, channel)
-	cmd := map[string]string{
+
+	cmd := map[string]interface{}{
 		"cmd":   lib.CommandTypePlay,
 		"track": trackUri,
+		"execAt": p.timeSyncer.SyncedTime().Add(time.Duration(p.conf.LatencyDelayMs) * time.Millisecond).UnixNano(),
 	}
 
 	go p.publish(channel, cmd)
