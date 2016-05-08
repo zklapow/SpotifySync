@@ -7,17 +7,19 @@ import (
 	"os"
 	"path"
 	"time"
+	"github.com/zklapow/SpotifySync/lib"
 )
 
 type SpotifyPlayer struct {
-	Conf      *Config
-	Session   *spotify.Session
-	portaudio *portAudio
-	exit      chan bool
-	events    *Events
+	Conf       *Config
+	Session    *spotify.Session
+	portaudio  *portAudio
+	exit       chan bool
+	events     *Events
+	timeSyncer *lib.TimeSyncer
 }
 
-func newSpotifyPlayer(conf *Config) *SpotifyPlayer {
+func newSpotifyPlayer(conf *Config, timeSyncer *lib.TimeSyncer) *SpotifyPlayer {
 	prog := path.Base(os.Args[0])
 	appKey, err := ioutil.ReadFile(conf.AppKeyPath)
 	if err != nil {
@@ -57,6 +59,7 @@ func newSpotifyPlayer(conf *Config) *SpotifyPlayer {
 		portaudio: pa,
 		exit:      make(chan bool),
 		events:    newEvents(),
+		timeSyncer: timeSyncer,
 	}
 }
 

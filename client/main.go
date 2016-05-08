@@ -13,6 +13,10 @@ import (
 	"os/user"
 	"path"
 	"strings"
+	"github.com/pubnub/go/messaging"
+	"github.com/zklapow/SpotifySync/lib"
+	"time"
+	"math"
 )
 
 type Config struct {
@@ -82,10 +86,19 @@ func main() {
 
 	getPassword(&conf)
 
-	client := newSpotifyPlayer(&conf)
+	pubnub := messaging.NewPubnub(conf.PublishKey, conf.SubscribeKey, conf.SecretKey, "", false, "")
+
+	timeSyncer := lib.StartTimeSync(pubnub)
+	timeSyncer.AwaitSynced()
+
+	now := time.Now()
+	clientTime := timeSyncer.SyncedTime()
+	logger.Infof("Time sync started (%v, %v, %v)", now, clientTime, math.Abs(float64(now.Unix()) - float64(clientTime.Unix())))
+
+	client := newSpotifyPlayer(&conf, timeSyncer)
 	client.Run()
 
-	pnDispatch := newPubNubEventDispatcher(client.events, &conf)
+	pnDispatch := newPubNubEventDispatcher(client.events, pubnub, &conf)
 	pnDispatch.Run()
 
 	signals := make(chan os.Signal, 1)

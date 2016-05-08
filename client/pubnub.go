@@ -12,9 +12,7 @@ type PubNubEventDispatcher struct {
 	pubnub *messaging.Pubnub
 }
 
-func newPubNubEventDispatcher(events *Events, conf *Config) *PubNubEventDispatcher {
-	pubnub := messaging.NewPubnub(conf.PublishKey, conf.SubscribeKey, conf.SecretKey, "", false, "")
-
+func newPubNubEventDispatcher(events *Events, pubnub *messaging.Pubnub, conf *Config) *PubNubEventDispatcher {
 	return &PubNubEventDispatcher{conf: conf, events: events, pubnub: pubnub}
 }
 
