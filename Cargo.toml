@@ -1,0 +1,13 @@
+[package]
+name = "SpotifySync"
+version = "0.1.0"
+authors = ["Ze'ev Klapow <zklapow@hubspot.com>"]
+
+[dependencies]
+clap = "2.29.2"
+configure = "0.1.1"
+serde = "1.0.27"
+serde_derive = "1.0.27"
+tokio-core = "0.1.12"
+librespot = { git = "https://github.com/librespot-org/librespot.git" }
+

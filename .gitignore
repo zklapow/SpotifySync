@@ -72,3 +72,8 @@ _testmain.go
 *.prof
 
 release/
+/target/
+**/*.rs.bk
+Cargo.lock
+/target/
+**/*.rs.bk
